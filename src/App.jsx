@@ -1,7 +1,308 @@
+// import React, { useState, useEffect, useMemo } from 'react';
+// import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+// import { DollarSign, TrendingUp, Calendar, AlertCircle, PlusCircle, Settings, FileText, BarChart3, Trash2, LogOut, User } from 'lucide-react';
+// import { authAPI, expenseAPI, categoryAPI, incomeAPI } from './services/api';
+
+// const FinanceApp = () => {
+//   const [isAuthenticated, setIsAuthenticated] = useState(false);
+//   const [user, setUser] = useState(null);
+//   const [activeTab, setActiveTab] = useState('dashboard');
+//   const [loading, setLoading] = useState(false);
+  
+//   const [income, setIncome] = useState([]);
+//   const [categories, setCategories] = useState([]);
+//   const [expenses, setExpenses] = useState([]);
+  
+//   const [newExpense, setNewExpense] = useState({
+//     date: new Date().toISOString().split('T')[0],
+//     description: '',
+//     category: '',
+//     amount: '',
+//     account: 'Credit Card'
+//   });
+
+//   const [authMode, setAuthMode] = useState('login');
+//   const [authForm, setAuthForm] = useState({
+//     name: '',
+//     email: '',
+//     password: ''
+//   });
+
+//   useEffect(() => {
+//     const token = localStorage.getItem('token');
+//     const savedUser = localStorage.getItem('user');
+    
+//     if (token && savedUser) {
+//       setUser(JSON.parse(savedUser));
+//       setIsAuthenticated(true);
+//     }
+//   }, []);
+
+//   useEffect(() => {
+//     if (isAuthenticated) {
+//       initializeData();
+//     }
+//   }, [isAuthenticated]);
+
+//   const initializeData = async () => {
+//     setLoading(true);
+//     try {
+//       const [expensesData, categoriesData, incomeData] = await Promise.all([
+//         expenseAPI.getAll(),
+//         categoryAPI.getAll(),
+//         incomeAPI.getAll()
+//       ]);
+      
+//       setExpenses(expensesData);
+//       setCategories(categoriesData);
+//       setIncome(incomeData);
+      
+//       if (categoriesData.length > 0) {
+//         setNewExpense(prev => ({ ...prev, category: categoriesData[0].name }));
+//       }
+//     } catch (error) {
+//       console.error('Error loading data:', error);
+//       alert('Failed to load data. Please try again.');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleAuth = async () => {
+//     if (!authForm.email || !authForm.password) {
+//       alert('Please fill in all fields');
+//       return;
+//     }
+
+//     if (authMode === 'register' && !authForm.name) {
+//       alert('Please enter your name');
+//       return;
+//     }
+
+//     setLoading(true);
+    
+//     try {
+//       let response;
+//       if (authMode === 'register') {
+//         response = await authAPI.register(authForm);
+//       } else {
+//         response = await authAPI.login({
+//           email: authForm.email,
+//           password: authForm.password
+//         });
+//       }
+      
+//       setUser(response.user);
+//       setIsAuthenticated(true);
+//       setAuthForm({ name: '', email: '', password: '' });
+//     } catch (error) {
+//       console.error('Auth error:', error);
+//       alert(error.response?.data?.message || 'Authentication failed. Please try again.');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleLogout = () => {
+//     authAPI.logout();
+//     setIsAuthenticated(false);
+//     setUser(null);
+//     setExpenses([]);
+//     setCategories([]);
+//     setIncome([]);
+//   };
+
+//   const totalIncome = useMemo(() => 
+//     income.reduce((sum, item) => sum + item.amount, 0), [income]
+//   );
+
+//   const totalBudget = useMemo(() => 
+//     categories.reduce((sum, cat) => sum + cat.budget, 0), [categories]
+//   );
+
+//   const currentMonthExpenses = useMemo(() => {
+//     const now = new Date();
+//     return expenses.filter(exp => {
+//       const expDate = new Date(exp.date);
+//       return expDate.getMonth() === now.getMonth() && 
+//              expDate.getFullYear() === now.getFullYear();
+//     });
+//   }, [expenses]);
+
+//   const totalSpent = useMemo(() => 
+//     currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0), 
+//     [currentMonthExpenses]
+//   );
+
+//   const categorySpending = useMemo(() => {
+//     const spending = {};
+//     categories.forEach(cat => {
+//       spending[cat.name] = currentMonthExpenses
+//         .filter(exp => exp.category === cat.name)
+//         .reduce((sum, exp) => sum + exp.amount, 0);
+//     });
+//     return spending;
+//   }, [currentMonthExpenses, categories]);
+
+//   const varianceData = useMemo(() => 
+//     categories.map(cat => ({
+//       ...cat,
+//       actual: categorySpending[cat.name] || 0,
+//       remaining: cat.budget - (categorySpending[cat.name] || 0),
+//       percentage: ((categorySpending[cat.name] || 0) / cat.budget) * 100
+//     })), [categories, categorySpending]
+//   );
+
+//   const averageDailySpend = useMemo(() => {
+//     const today = new Date();
+//     const dayOfMonth = today.getDate();
+//     return totalSpent / dayOfMonth;
+//   }, [totalSpent]);
+
+//   const savingsActual = categorySpending['Savings'] || 0;
+//   const savingsGoal = categories.find(c => c.name === 'Savings')?.budget || 0;
+
+//   const addExpense = async () => {
+//     if (!newExpense.description || !newExpense.amount) {
+//       alert('Please fill in all fields');
+//       return;
+//     }
+
+//     setLoading(true);
+//     try {
+//       const expense = await expenseAPI.create({
+//         ...newExpense,
+//         amount: parseFloat(newExpense.amount)
+//       });
+      
+//       setExpenses([...expenses, expense]);
+//       setNewExpense({
+//         date: new Date().toISOString().split('T')[0],
+//         description: '',
+//         category: categories[0]?.name || '',
+//         amount: '',
+//         account: 'Credit Card'
+//       });
+//     } catch (error) {
+//       console.error('Error adding expense:', error);
+//       alert('Failed to add expense');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const deleteExpense = async (id) => {
+//     setLoading(true);
+//     try {
+//       await expenseAPI.delete(id);
+//       setExpenses(expenses.filter(exp => exp._id !== id && exp.id !== id));
+//     } catch (error) {
+//       console.error('Error deleting expense:', error);
+//       alert('Failed to delete expense');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const pieChartData = varianceData
+//     .filter(cat => cat.actual > 0)
+//     .map(cat => ({
+//       name: cat.name,
+//       value: cat.actual,
+//       color: cat.color
+//     }));
+
+//   if (!isAuthenticated) {
+//     return (
+//       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+//         <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+//           <div className="text-center mb-8">
+//             <DollarSign className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+//             <h1 className="text-3xl font-bold text-gray-800">Finance Manager</h1>
+//             <p className="text-gray-600 mt-2">Track your expenses and budget</p>
+//           </div>
+
+//           <div className="flex gap-2 mb-6">
+//             <button
+//               onClick={() => setAuthMode('login')}
+//               className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
+//                 authMode === 'login'
+//                   ? 'bg-blue-600 text-white'
+//                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+//               }`}
+//             >
+//               Login
+//             </button>
+//             <button
+//               onClick={() => setAuthMode('register')}
+//               className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
+//                 authMode === 'register'
+//                   ? 'bg-blue-600 text-white'
+//                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+//               }`}
+//             >
+//               Register
+//             </button>
+//           </div>
+
+//           <div className="space-y-4">
+//             {authMode === 'register' && (
+//               <div>
+//                 <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+//                 <input
+//                   type="text"
+//                   value={authForm.name}
+//                   onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+//                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//                   placeholder="Enter your name"
+//                 />
+//               </div>
+//             )}
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+//               <input
+//                 type="email"
+//                 value={authForm.email}
+//                 onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+//                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//                 placeholder="Enter your email"
+//               />
+//             </div>
+
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+//               <input
+//                 type="password"
+//                 value={authForm.password}
+//                 onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+//                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+//                 placeholder="Enter your password"
+//                 onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
+//               />
+//             </div>
+
+//             <button
+//               onClick={handleAuth}
+//               disabled={loading}
+//               className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+//             >
+//               {loading ? 'Please wait...' : authMode === 'login' ? 'Login' : 'Create Account'}
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     );
+//   }
+
+
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { DollarSign, TrendingUp, Calendar, AlertCircle, PlusCircle, Settings, FileText, BarChart3, Trash2, LogOut, User } from 'lucide-react';
 import { authAPI, expenseAPI, categoryAPI, incomeAPI } from './services/api';
+import LoginPage from './components/LoginPage';
 
 const FinanceApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -19,13 +320,6 @@ const FinanceApp = () => {
     category: '',
     amount: '',
     account: 'Credit Card'
-  });
-
-  const [authMode, setAuthMode] = useState('login');
-  const [authForm, setAuthForm] = useState({
-    name: '',
-    email: '',
-    password: ''
   });
 
   useEffect(() => {
@@ -68,39 +362,9 @@ const FinanceApp = () => {
     }
   };
 
-  const handleAuth = async () => {
-    if (!authForm.email || !authForm.password) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    if (authMode === 'register' && !authForm.name) {
-      alert('Please enter your name');
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      let response;
-      if (authMode === 'register') {
-        response = await authAPI.register(authForm);
-      } else {
-        response = await authAPI.login({
-          email: authForm.email,
-          password: authForm.password
-        });
-      }
-      
-      setUser(response.user);
-      setIsAuthenticated(true);
-      setAuthForm({ name: '', email: '', password: '' });
-    } catch (error) {
-      console.error('Auth error:', error);
-      alert(error.response?.data?.message || 'Authentication failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
@@ -212,88 +476,17 @@ const FinanceApp = () => {
       color: cat.color
     }));
 
+  // Show login page if not authenticated
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-          <div className="text-center mb-8">
-            <DollarSign className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-800">Finance Manager</h1>
-            <p className="text-gray-600 mt-2">Track your expenses and budget</p>
-          </div>
-
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => setAuthMode('login')}
-              className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
-                authMode === 'login'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setAuthMode('register')}
-              className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
-                authMode === 'register'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Register
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {authMode === 'register' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                <input
-                  type="text"
-                  value={authForm.name}
-                  onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your name"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                type="email"
-                value={authForm.email}
-                onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your email"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <input
-                type="password"
-                value={authForm.password}
-                onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your password"
-                onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
-              />
-            </div>
-
-            <button
-              onClick={handleAuth}
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Please wait...' : authMode === 'login' ? 'Login' : 'Create Account'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
+
+
+//////
+
+
+
+
 
   if (loading && expenses.length === 0) {
     return (
